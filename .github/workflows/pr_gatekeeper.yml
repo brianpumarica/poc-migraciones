@@ -14,7 +14,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 🐳 Levantar Base de Datos y App (Modo Test)
-        run: docker-compose -f docker-compose.yml up -d --build
+        run: docker compose -f docker-compose.yml up -d --build
 
       - name: ⏳ Esperar a que la base de datos esté lista
         run: sleep 5 # Puedes usar un script de wait-for-it más sofisticado
@@ -23,7 +23,7 @@ jobs:
         id: generate_sql
         # Ejecutamos el upgrade en modo SQL y guardamos la salida en un archivo
         run: |
-          docker-compose exec -T web alembic upgrade head --sql > migration_plan.sql
+          docker compose exec -T web alembic upgrade head --sql > migration_plan.sql
           
           # Guardamos el SQL en una variable de entorno de GitHub para el próximo paso
           EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
