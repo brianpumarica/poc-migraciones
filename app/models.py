@@ -17,5 +17,6 @@ class Empleado(Base):
     name = Column(String, index=True)
     empresa_id = Column(Integer, ForeignKey("empresas.id"))
     cargo = Column(String, nullable=True)
+    email = Column(String, nullable=False)
 
     empresa = relationship("Empresa", back_populates="empleados")

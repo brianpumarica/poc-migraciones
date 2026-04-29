@@ -95,7 +95,10 @@ Para asegurar que el enfoque 100% automatizado con CI/CD es robusto, ejecutaremo
 **Prueba 2: Columna NOT NULL sin default en tabla con datos**
 *   **Acción:** Insertar un dato en BD. Luego, en `Empleado` agregar `email = Column(String, nullable=False)`.
 *   **Hipótesis:** Alembic autogenerará un `ADD COLUMN email VARCHAR NOT NULL`. Sin embargo, PostgreSQL abortará el `upgrade` porque ya existen filas y el nuevo campo no puede quedar vacío.
-*   **Solución:** Hacer migraciones en 3 pasos o agregar un parámetro `server_default`.
+*   **Estado:** Ejecutado y validado. Al autogenerar la migración, Alembic creó correctamente los comandos `op.add_column` y `op.drop_column`. Sin embargo, al intentar aplicarla, PostgreSQL abortó el upgrade lanzando la excepción: `psycopg2.errors.NotNullViolation: column "email" of relation "empleados" contains null values`.
+*   **Solución:** Intervenir manualmente la migración autogenerada aplicando uno de estos dos enfoques:
+    1. **Migración en 3 pasos:** Modificar el archivo para crear la columna temporalmente con `nullable=True`, ejecutar un comando `op.execute("UPDATE empleados SET email = 'pendiente' WHERE email IS NULL")` para rellenar los datos existentes, y finalmente usar `op.alter_column` para aplicar la restricción `nullable=False`.
+    2. **Parámetro server_default:** Agregar `server_default='sin_email@ejemplo.com'` dentro del `op.add_column` para que PostgreSQL llene automáticamente las filas existentes al crear la columna.
 
 **Prueba 3: Cambio Incompatible de Tipo de Dato**
 *   **Acción:** Cambiar el tipo de `rol` de `String` a `Integer`.
