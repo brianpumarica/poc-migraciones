@@ -196,4 +196,22 @@ Para comprobar que el ciclo de vida funciona:
    ```
 
 Si todo esto funciona de manera fluida, tu stack está 100% listo para ser trasladado al `.github/workflows/deploy.yml` exacto que diseñaste en tu resumen ejecutivo.
+
+---
+
+### 7. Registro de Ejecución Inicial (Agregado Automáticamente)
+
+Los pasos descritos en este plan fueron ejecutados y validados con éxito en la Prueba de Concepto. A continuación, el detalle de lo que se realizó:
+
+1. **Creación de Archivos:** Se generaron todos los archivos del código base (`requirements.txt`, `Dockerfile`, `docker-compose.yml`, `app/database.py`, `app/models.py`, `app/main.py`, `app/__init__.py`).
+2. **Levantamiento de Contenedores:** Se construyeron las imágenes y se levantaron los servicios con `docker-compose up -d --build`. (Requirió iniciar Docker Desktop).
+3. **Inicialización de Alembic:** Se ejecutó `docker-compose exec web alembic init alembic`, creando la configuración de migraciones.
+4. **Configuración de Conexión y Modelos:** 
+   - Se modificó `alembic/env.py` para usar `DATABASE_URL` del entorno y `Base.metadata` de los modelos.
+   - Se anuló `sqlalchemy.url` en `alembic.ini`.
+5. **Primera Migración Exitosa:**
+   - Se generó la versión inicial detectando las tablas `empresas` y `empleados`: `docker-compose exec web alembic revision --autogenerate -m "Crear Empresa y Empleado"`.
+   - Se aplicó la migración sobre la base de datos PostgreSQL: `docker-compose exec web alembic upgrade head`.
+
+*(Estado actual: Base de datos lista para continuar con la "Prueba de Fuego")*
 ```

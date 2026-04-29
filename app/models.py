@@ -16,5 +16,6 @@ class Empleado(Base):
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String, index=True)
     empresa_id = Column(Integer, ForeignKey("empresas.id"))
+    rol = Column(String, nullable=True)
 
     empresa = relationship("Empresa", back_populates="empleados")
