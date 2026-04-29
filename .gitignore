@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv
+env/
+venv/
+alembic.ini
+# No ignoraremos alembic.ini si lo modificamos para que sea genérico, 
+# pero usualmente los credentials van en .env. Como aquí forzamos DATABASE_URL, podemos subirlo.
+
+# Postgres data si llegaras a mapear volumen local
+/pgdata/

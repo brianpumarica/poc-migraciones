@@ -214,4 +214,30 @@ Los pasos descritos en este plan fueron ejecutados y validados con éxito en la 
    - Se aplicó la migración sobre la base de datos PostgreSQL: `docker-compose exec web alembic upgrade head`.
 
 *(Estado actual: Base de datos lista para continuar con la "Prueba de Fuego")*
+
+---
+
+### 8. Pruebas de Estrés y Casos Extremos ("Rompiendo" Alembic)
+
+Para asegurar que el enfoque 100% automatizado con CI/CD es robusto, ejecutaremos las siguientes pruebas de estrés para entender las limitaciones del `autogenerate` de Alembic y cómo el "Gatekeeper" evita desastres en Producción:
+
+**Prueba 1: Renombrar una Columna (Riesgo de Pérdida de Datos)**
+*   **Acción:** Cambiar el nombre de `rol` a `cargo` en el modelo `Empleado`.
+*   **Hipótesis:** Alembic no sabe si renombraste el campo o si borraste uno viejo y creaste uno nuevo. Por defecto, generará un `DROP COLUMN rol` y un `ADD COLUMN cargo`. Esto significa que perderías toda la data.
+*   **Solución:** El Tech Lead detectará el `DROP` en el Pull Request. Se debe intervenir la migración manualmente usando `op.alter_column()`.
+
+**Prueba 2: Columna NOT NULL sin default en tabla con datos**
+*   **Acción:** Insertar un dato en BD. Luego, en `Empleado` agregar `email = Column(String, nullable=False)`.
+*   **Hipótesis:** Alembic autogenerará un `ADD COLUMN email VARCHAR NOT NULL`. Sin embargo, PostgreSQL abortará el `upgrade` porque ya existen filas y el nuevo campo no puede quedar vacío.
+*   **Solución:** Hacer migraciones en 3 pasos o agregar un parámetro `server_default`.
+
+**Prueba 3: Cambio Incompatible de Tipo de Dato**
+*   **Acción:** Cambiar el tipo de `rol` de `String` a `Integer`.
+*   **Hipótesis:** Si la columna tiene letras, PostgreSQL rechazará el `ALTER TABLE ... TYPE INTEGER` porque no sabe cómo "castear" el texto a número.
+*   **Solución:** Intervenir la migración para inyectar una cláusula `USING` de Postgres.
+
+**Prueba 4: Renombrar una Tabla Completa**
+*   **Acción:** Cambiar `__tablename__ = "empleados"` a `__tablename__ = "trabajadores"`.
+*   **Hipótesis:** Alembic hará un `DROP TABLE empleados` y un `CREATE TABLE trabajadores`, rompiendo foreign keys y borrando datos.
+*   **Solución:** Ajuste manual en la migración usando `op.rename_table()`.
 ```

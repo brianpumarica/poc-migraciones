@@ -1,0 +1,46 @@
+name: "DB Gatekeeper (SQL Review)"
+
+# Se ejecuta cada vez que alguien abre o actualiza un Pull Request
+on:
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  db-gatekeeper:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Clonar el repositorio
+        uses: actions/checkout@v4
+
+      - name: 🐳 Levantar Base de Datos y App (Modo Test)
+        run: docker-compose -f docker-compose.yml up -d --build
+
+      - name: ⏳ Esperar a que la base de datos esté lista
+        run: sleep 5 # Puedes usar un script de wait-for-it más sofisticado
+
+      - name: 🔍 Generar SQL de la migración pendiente
+        id: generate_sql
+        # Ejecutamos el upgrade en modo SQL y guardamos la salida en un archivo
+        run: |
+          docker-compose exec -T web alembic upgrade head --sql > migration_plan.sql
+          
+          # Guardamos el SQL en una variable de entorno de GitHub para el próximo paso
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "SQL_OUTPUT<<$EOF" >> $GITHUB_ENV
+          cat migration_plan.sql >> $GITHUB_ENV
+          echo "$EOF" >> $GITHUB_ENV
+
+      - name: 💬 Comentar el SQL en el Pull Request
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: db-migration-plan
+          message: |
+            ### 🚨 Gatekeeper de Base de Datos
+            El desarrollador ha hecho cambios en `models.py`. Aquí está el código SQL que se ejecutará en Producción si apruebas este PR:
+            
+            ```sql
+            ${{ env.SQL_OUTPUT }}
+            ```
+            
+            **Tech Lead:** Por favor, revisa que no haya sentencias `DROP TABLE` o `DROP COLUMN` accidentales antes de hacer Merge.
