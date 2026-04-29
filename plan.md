@@ -217,6 +217,16 @@ Los pasos descritos en este plan fueron ejecutados y validados con éxito en la 
 
 ---
 
+### 7.5. Configurar Gatekeeper en GitHub (Pipeline CI/CD)
+
+Para usar el workflow del "Gatekeeper" (`pr_gatekeeper.yml`) y permitir que GitHub publique automáticamente el SQL generado en tus Pull Requests, asegúrate de:
+1. Iniciar git y subir el código incluyendo `.github/workflows/pr_gatekeeper.yml`, `.gitignore` y `alembic/`.
+2. **Dar permisos al Bot de GitHub**:
+   - En tu repositorio remoto ve a **Settings** > **Actions** > **General**.
+   - Baja hasta **Workflow permissions**.
+   - Marca **"Read and write permissions"** y guarda. Esto permite a la acción `sticky-pull-request-comment` escribir en tu PR.
+
+---
 ### 8. Pruebas de Estrés y Casos Extremos ("Rompiendo" Alembic)
 
 Para asegurar que el enfoque 100% automatizado con CI/CD es robusto, ejecutaremos las siguientes pruebas de estrés para entender las limitaciones del `autogenerate` de Alembic y cómo el "Gatekeeper" evita desastres en Producción:
@@ -225,6 +235,7 @@ Para asegurar que el enfoque 100% automatizado con CI/CD es robusto, ejecutaremo
 *   **Acción:** Cambiar el nombre de `rol` a `cargo` en el modelo `Empleado`.
 *   **Hipótesis:** Alembic no sabe si renombraste el campo o si borraste uno viejo y creaste uno nuevo. Por defecto, generará un `DROP COLUMN rol` y un `ADD COLUMN cargo`. Esto significa que perderías toda la data.
 *   **Solución:** El Tech Lead detectará el `DROP` en el Pull Request. Se debe intervenir la migración manualmente usando `op.alter_column()`.
+*   **Estado:** Ejecutado y validado. La intervención manual funcionó correctamente.
 
 **Prueba 2: Columna NOT NULL sin default en tabla con datos**
 *   **Acción:** Insertar un dato en BD. Luego, en `Empleado` agregar `email = Column(String, nullable=False)`.
