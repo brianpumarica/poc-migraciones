@@ -71,17 +71,6 @@ Para usar el workflow del "Gatekeeper" (`pr_gatekeeper.yml`) y permitir que GitH
    - Marca **"Read and write permissions"** y guarda. Esto permite a la acción `sticky-pull-request-comment` escribir en tu PR.
 
 ---
-
-### 4. Configurar Gatekeeper en GitHub (Pipeline CI/CD)
-
-Para usar el workflow del "Gatekeeper" (`pr_gatekeeper.yml`) y permitir que GitHub publique automáticamente el SQL generado en tus Pull Requests, asegúrate de:
-1. Iniciar git y subir el código incluyendo `.github/workflows/pr_gatekeeper.yml`, `.gitignore` y `alembic/`.
-2. **Dar permisos al Bot de GitHub**:
-   - En tu repositorio remoto ve a **Settings** > **Actions** > **General**.
-   - Baja hasta **Workflow permissions**.
-   - Marca **"Read and write permissions"** y guarda. Esto permite a la acción `sticky-pull-request-comment` escribir en tu PR.
-
----
 ### 5. Pruebas de Estrés y Casos Extremos ("Rompiendo" Alembic)
 
 Para asegurar que el enfoque 100% automatizado con CI/CD es robusto, ejecutaremos las siguientes pruebas de estrés para entender las limitaciones del `autogenerate` de Alembic y cómo el "Gatekeeper" evita desastres en Producción:
@@ -112,4 +101,27 @@ Para asegurar que el enfoque 100% automatizado con CI/CD es robusto, ejecutaremo
 *   **Acción:** Cambiar `__tablename__ = "empleados"` a `__tablename__ = "trabajadores"`.
 *   **Hipótesis:** Alembic hará un `DROP TABLE empleados` y un `CREATE TABLE trabajadores`, rompiendo foreign keys y borrando datos.
 *   **Solución:** Ajuste manual en la migración usando `op.rename_table()`.
+
+---
+
+### 6. Mejoras de Entorno (Git)
+
+Durante el desarrollo con Docker en Windows, se configuraron ciertas mejoras para evitar problemas y warnings en Git:
+1. **Normalización de saltos de línea (LF vs CRLF):** Se agregó un archivo `.gitattributes` en la raíz para asegurar que todos los archivos usen saltos de línea `LF`, evitando incompatibilidades con el contenedor Linux. (Para aplicarlo se recomienda usar `git add --renormalize .`)
+2. **Limpiar caché de archivos ignorados:** Para prevenir que Git avise constantemente sobre archivos ignorados (como `__pycache__`) que fueron cacheados accidentalmente en el pasado, se ejecutaron:
+   ```bash
+   git rm -r --cached app/__pycache__
+   git config set advice.addIgnoredFile false
+   ```
+
+---
+
+### 7. Implementación de un "Watcher" para Migraciones Automáticas
+
+El objetivo de un "Watcher" (Vigilante) es tener un proceso corriendo en segundo plano mientras desarrollas. Este proceso "vigilará" constantemente el archivo `app/models.py` y, cada vez que detecte un cambio guardado, ejecutará automáticamente Alembic.
+
+**Enfoque Elegido: Usar la librería Python `watchdog` dentro de Docker**
+*   **Cómo funciona:** El script utiliza eventos del sistema operativo para saber exactamente cuándo el archivo `models.py` fue modificado. Al detectarlo, ejecuta los comandos de migración. Al ser de Python, es natural y fácil de personalizar.
+*   **Arquitectura:** Se configuró para correr dentro de Docker como un servicio extra en `docker-compose.yml`. Este contenedor se inicia junto con la app y la base de datos, vigila el archivo (mapeado por volúmenes) y corre Alembic desde adentro.
+*   **Gran Ventaja:** Si otro desarrollador se baja el proyecto, le funcionará la magia automáticamente al hacer `docker-compose up` sin tener que instalar o correr nada extra. Reemplaza el trabajo manual al 100%.
 ```
