@@ -93,7 +93,10 @@ Para asegurar que el enfoque 100% automatizado con CI/CD es robusto, ejecutaremo
 *   **Estado:** Ejecutado y validado. La intervención manual funcionó correctamente.
 
 **Prueba 2: Columna NOT NULL sin default en tabla con datos**
-*   **Acción:** Insertar un dato en BD. Luego, en `Empleado` agregar `email = Column(String, nullable=False)`.
+*   **Acción:** Insertar un dato en BD. Luego, en `Empleado` agregar `email = Column(String, nullable=False)`. Pasos exactos realizados:
+    1. Insertar datos de prueba usando el nombre correcto de la columna (name).
+    2. Generar la nueva migración automáticamente con Alembic.
+    3. Intentar aplicar la migración (esto debería abortar mostrando el error de NOT NULL).
 *   **Hipótesis:** Alembic autogenerará un `ADD COLUMN email VARCHAR NOT NULL`. Sin embargo, PostgreSQL abortará el `upgrade` porque ya existen filas y el nuevo campo no puede quedar vacío.
 *   **Estado:** Ejecutado y validado. Al autogenerar la migración, Alembic creó correctamente los comandos `op.add_column` y `op.drop_column`. Sin embargo, al intentar aplicarla, PostgreSQL abortó el upgrade lanzando la excepción: `psycopg2.errors.NotNullViolation: column "email" of relation "empleados" contains null values`.
 *   **Solución:** Intervenir manualmente la migración autogenerada aplicando uno de estos dos enfoques:

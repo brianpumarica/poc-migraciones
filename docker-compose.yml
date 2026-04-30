@@ -18,3 +18,13 @@ services:
       - DATABASE_URL=postgresql://admin:password@db:5432/poc_db
     depends_on:
       - db
+
+  watcher:
+    build: .
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=postgresql://admin:password@db:5432/poc_db
+    depends_on:
+      - db
+    command: python -u auto_migrator.py
