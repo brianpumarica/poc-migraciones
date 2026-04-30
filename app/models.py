@@ -6,7 +6,8 @@ class Empresa(Base):
     __tablename__ = "empresas"
 
     id = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String, index=True)
+    name = Column(String, index=True)
+    telefonito = Column(String, nullable=True)
 
     empleados = relationship("Empleado", back_populates="empresa")
 
@@ -14,8 +15,9 @@ class Empleado(Base):
     __tablename__ = "empleados"
 
     id = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String, index=True)
+    name = Column(String, index=True)
     empresa_id = Column(Integer, ForeignKey("empresas.id"))
     cargo = Column(String, nullable=True)
+    email = Column(String, nullable=False, server_default='sin_correo@empresa.com')
 
     empresa = relationship("Empresa", back_populates="empleados")
