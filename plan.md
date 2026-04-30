@@ -71,6 +71,17 @@ Para usar el workflow del "Gatekeeper" (`pr_gatekeeper.yml`) y permitir que GitH
    - Marca **"Read and write permissions"** y guarda. Esto permite a la acción `sticky-pull-request-comment` escribir en tu PR.
 
 ---
+
+### 4. Configurar Gatekeeper en GitHub (Pipeline CI/CD)
+
+Para usar el workflow del "Gatekeeper" (`pr_gatekeeper.yml`) y permitir que GitHub publique automáticamente el SQL generado en tus Pull Requests, asegúrate de:
+1. Iniciar git y subir el código incluyendo `.github/workflows/pr_gatekeeper.yml`, `.gitignore` y `alembic/`.
+2. **Dar permisos al Bot de GitHub**:
+   - En tu repositorio remoto ve a **Settings** > **Actions** > **General**.
+   - Baja hasta **Workflow permissions**.
+   - Marca **"Read and write permissions"** y guarda. Esto permite a la acción `sticky-pull-request-comment` escribir en tu PR.
+
+---
 ### 5. Pruebas de Estrés y Casos Extremos ("Rompiendo" Alembic)
 
 Para asegurar que el enfoque 100% automatizado con CI/CD es robusto, ejecutaremos las siguientes pruebas de estrés para entender las limitaciones del `autogenerate` de Alembic y cómo el "Gatekeeper" evita desastres en Producción:
