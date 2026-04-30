@@ -72,12 +72,20 @@ def run_migrations_online() -> None:
         poolclass=pool.NullPool,
     )
 
+    def process_revision_directives(context, revision, directives):
+        if getattr(config.cmd_opts, 'autogenerate', False):
+            script = directives[0]
+            if script.upgrade_ops.is_empty():
+                directives[:] = []
+                print("No se detectaron cambios en models.py. No se genera archivo.")
+
     with connectable.connect() as connection:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
             compare_type=True,
             compare_server_default=True,
+            process_revision_directives=process_revision_directives,
         )
 
         with context.begin_transaction():

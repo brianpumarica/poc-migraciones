@@ -112,4 +112,27 @@ Para asegurar que el enfoque 100% automatizado con CI/CD es robusto, ejecutaremo
 *   **Acción:** Cambiar `__tablename__ = "empleados"` a `__tablename__ = "trabajadores"`.
 *   **Hipótesis:** Alembic hará un `DROP TABLE empleados` y un `CREATE TABLE trabajadores`, rompiendo foreign keys y borrando datos.
 *   **Solución:** Ajuste manual en la migración usando `op.rename_table()`.
+
+---
+
+### 6. Mejoras de Entorno (Git)
+
+Durante el desarrollo con Docker en Windows, se configuraron ciertas mejoras para evitar problemas y warnings en Git:
+1. **Normalización de saltos de línea (LF vs CRLF):** Se agregó un archivo `.gitattributes` en la raíz para asegurar que todos los archivos usen saltos de línea `LF`, evitando incompatibilidades con el contenedor Linux. (Para aplicarlo se recomienda usar `git add --renormalize .`)
+2. **Limpiar caché de archivos ignorados:** Para prevenir que Git avise constantemente sobre archivos ignorados (como `__pycache__`) que fueron cacheados accidentalmente en el pasado, se ejecutaron:
+   ```bash
+   git rm -r --cached app/__pycache__
+   git config set advice.addIgnoredFile false
+   ```
+
+---
+
+### 7. Implementación de un "Watcher" para Migraciones Automáticas
+
+El objetivo de un "Watcher" (Vigilante) es tener un proceso corriendo en segundo plano mientras desarrollas. Este proceso "vigilará" constantemente el archivo `app/models.py` y, cada vez que detecte un cambio guardado, ejecutará automáticamente Alembic.
+
+**Enfoque Elegido: Usar la librería Python `watchdog` dentro de Docker**
+*   **Cómo funciona:** El script utiliza eventos del sistema operativo para saber exactamente cuándo el archivo `models.py` fue modificado. Al detectarlo, ejecuta los comandos de migración. Al ser de Python, es natural y fácil de personalizar.
+*   **Arquitectura:** Se configuró para correr dentro de Docker como un servicio extra en `docker-compose.yml`. Este contenedor se inicia junto con la app y la base de datos, vigila el archivo (mapeado por volúmenes) y corre Alembic desde adentro.
+*   **Gran Ventaja:** Si otro desarrollador se baja el proyecto, le funcionará la magia automáticamente al hacer `docker-compose up` sin tener que instalar o correr nada extra. Reemplaza el trabajo manual al 100%.
 ```
